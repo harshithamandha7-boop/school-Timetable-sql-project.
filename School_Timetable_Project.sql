@@ -263,6 +263,66 @@ VALUES
 (3, 5, 4, 3, 1, 6),
 (3, 10, 5, 5, 1, 8);
 
--- =========================
--- USEFUL STUDENT TASK QUERIES
--- =========================
+-- Question 1: View timetable in readable format
+SELECT 
+  c.class_name,
+  c.section,
+  d.day_name,
+  p.period_number,
+  p.start_time,
+  p.end_time,
+  s.subject_name,
+  CONCAT(t.first_name, ' ', t.last_name) AS teacher_name,
+  r.room_name
+FROM timetable tt
+JOIN classes c ON tt.class_id = c.class_id
+JOIN school_days d ON tt.day_id = d.day_id
+JOIN periods p ON tt.period_id = p.period_id
+JOIN subjects s ON tt.subject_id = s.subject_id
+JOIN teachers t ON tt.teacher_id = t.teacher_id
+JOIN rooms r ON tt.room_id = r.room_id
+ORDER BY c.class_id, d.day_id, p.period_number;
+
+-- Question 2: Find teacher clashes
+SELECT 
+  teacher_id,
+  day_id,
+  period_id,
+  COUNT(*) AS clash_count
+FROM timetable
+GROUP BY teacher_id, day_id, period_id
+HAVING COUNT(*) > 1;
+
+-- Question 3: Find room clashes
+SELECT 
+  room_id,
+  day_id,
+  period_id,
+  COUNT(*) AS room_clash_count
+FROM timetable
+GROUP BY room_id, day_id, period_id
+HAVING COUNT(*) > 1;
+
+-- Question 4: Check subject weekly period count by class
+SELECT 
+  c.class_name,
+  c.section,
+  s.subject_name,
+  s.weekly_periods AS required_periods,
+  COUNT(tt.timetable_id) AS assigned_periods
+FROM classes c
+JOIN subjects s
+LEFT JOIN timetable tt
+  ON c.class_id = tt.class_id
+  AND s.subject_id = tt.subject_id
+GROUP BY c.class_id, s.subject_id
+ORDER BY c.class_id, s.subject_id;
+
+-- Question 5: Check if teacher is teaching a subject/class they are not mapped to
+SELECT tt.*
+FROM timetable tt
+LEFT JOIN teacher_subject_class tsc
+  ON tt.teacher_id = tsc.teacher_id
+  AND tt.subject_id = tsc.subject_id
+  AND tt.class_id = tsc.class_id
+WHERE tsc.mapping_id IS NULL;
